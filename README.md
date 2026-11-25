@@ -430,3 +430,12 @@ icacls "vendor" /grant "%USERDOMAIN%\%USERNAME%:(OI)(CI)F" /T /C /Q
 
 **Q: 我的音声是人声+音效混在同一声道怎么办？**
 把「人声分离」换成 Demucs（界面里可一键安装），分离后再摆位会更干净。
+
+---
+
+## 九、许可
+
+MIT License，见 [LICENSE](LICENSE)。拿去改、拿去商用、拿去二次发布都行，保留版权声明即可。
+
+参考音频自动挑句的打分思路参考了 [asmr-dubber](https://github.com/EveningStudy/asmr-dubber)（MIT）的
+时长 / 语速 / 浊音占比 / 共振峰四维评分，按 GPT-SoVITS 的 3~10 秒限制重写过。
