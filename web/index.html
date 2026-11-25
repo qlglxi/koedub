@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KoeDub · 音声双语化工作台</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">◑</span>
+    <div>
+      <h1>KoeDub <small>音声双语化工作台</small></h1>
+      <p class="sub">MP3 注入 → 自适应译中 → AI 配音 → 原声原耳 · 中文完全对侧耳</p>
+    </div>
+  </div>
+  <div class="apibadge" id="apiBadge" title="点击查看完整 API 清单">
+    <b id="apiCount">–</b>
+    <span>种 API 能力</span>
+  </div>
+</header>
+
+<main class="layout">
+  <!-- ================= 左栏：配置 ================= -->
+  <aside class="panel config">
+    <!-- ==== 环境体检 ==== -->
+    <details class="diag" id="diagBox" open>
+      <summary>
+        <span class="dg-dot" id="dgDot"></span>
+        <b id="diagSummary">环境检查中…</b>
+      </summary>
+      <ul class="diag-list" id="diagList"></ul>
+      <div class="dg-probe hidden" id="dgProbe">
+        <audio id="dgProbeAudio" controls preload="metadata"></audio>
+        <div class="dl-d" id="dgProbeInfo"></div>
+      </div>
+      <div class="dg-foot">
+        <button class="btn ghost small" id="btnDiag">重新检查</button>
+        <button class="btn ghost small" id="btnSovitsStart">启动 GPT-SoVITS</button>
+        <button class="btn ghost small" id="btnSovitsStop">停止</button>
+        <button class="btn ghost small" id="btnSovitsTest">自检试听</button>
+      </div>
+      <div class="dg-progress hidden" id="dgProg">
+        <div class="bar"><i id="dgBar"></i></div>
+        <div class="dl-d" id="dgProgText"></div>
+        <button class="btn ghost micro" id="btnSovitsDLCancel">取消下载</button>
+      </div>
+    </details>
+
+    <h2>1 · 注入音声源</h2>
+    <div id="dropzone" class="dropzone">
+      <input type="file" id="fileInput" accept="audio/*,.mp3,.wav,.m4a,.flac,.ogg" hidden>
+      <div class="dz-inner">
+        <div class="dz-icon">＋</div>
+        <p><b>拖入 MP3</b> 或 <a href="#" id="pickLink">点击选择</a></p>
+        <p class="hint">支持 mp3 / wav / m4a / flac / ogg，单文件</p>
+      </div>
+      <div class="dz-progress" id="dzProgress"><i></i></div>
+    </div>
+    <div id="fileCard" class="filecard hidden">
+      <div class="fc-row"><b id="fcName">–</b><span id="fcSize" class="muted"></span></div>
+      <audio id="srcAudio" controls preload="metadata"></audio>
+      <div class="chips" id="fcChips"></div>
+    </div>
+
+    <h2>2 · 声道判定</h2>
+    <div class="earview">
+      <div class="ear" id="earL">
+        <div class="earlabel">左耳 L</div>
+        <div class="earmark" id="earLMark">?</div>
+        <div class="earnote" id="earLNote">待分析</div>
+      </div>
+      <div class="eararrow">⇄</div>
+      <div class="ear" id="earR">
+        <div class="earlabel">右耳 R</div>
+        <div class="earmark" id="earRMark">?</div>
+        <div class="earnote" id="earRNote">待分析</div>
+      </div>
+    </div>
+    <div class="row">
+      <label>原声侧</label>
+      <select id="forceSide">
+        <option value="auto">自动判定（推荐）</option>
+        <option value="left">强制：原声在左耳</option>
+        <option value="right">强制：原声在右耳</option>
+        <option value="center">居中（原声左 · 中文右）</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>原声侧处理</label>
+      <select id="originalMode">
+        <option value="media_swap">中/侧分解（推荐：原声留原耳，对侧清出人声位）</option>
+        <option value="swap">配音时段整段左右对调</option>
+        <option value="keep">保留原声立体声</option>
+        <option value="duck">对侧耳闪避</option>
+        <option value="mono_split">音效折叠双耳</option>
+      </select>
+    </div>
+    <button class="btn ghost" id="btnAnalyze">先试听并判定左右耳</button>
+
+    <h2>3 · 三种能力选择</h2>
+    <div id="asrNotice" class="notice hidden"></div>
+    <div class="row"><label>语音识别 <span class="tag req">必选</span></label>
+      <select id="asrProvider"></select></div>
+    <div class="row"><label>识别模型</label>
+      <select id="asrModel">
+        <option value="tiny">tiny（最快，粗糙）</option>
+        <option value="base">base</option>
+        <option value="small" selected>small（推荐）</option>
+        <option value="medium">medium</option>
+        <option value="large-v3">large-v3（最准，最慢）</option>
+      </select></div>
+    <div class="row"><label>自适应翻译 <span class="tag req">必选</span></label>
+      <select id="trProvider"></select></div>
+    <div class="row"><label>翻译风格</label>
+      <select id="trStyle">
+        <option value="adaptive" selected>自适应（推荐）</option>
+        <option value="natural">口语自然</option>
+        <option value="soft">轻柔耳语</option>
+        <option value="literal">贴近字面</option>
+      </select></div>
+    <div class="row"><label>AI 配音 <span class="tag req">必选</span></label>
+      <select id="ttsProvider"></select></div>
+    <div class="row"><label>中文音色</label>
+      <select id="ttsVoice"></select></div>
+    <div class="row"><label>调教音色参考</label>
+      <select id="ttsRefMode">
+        <option value="auto">自动挑选（从原音里选最干净的一句）</option>
+        <option value="fixed">固定用配置里的参考音频</option>
+      </select></div>
+    <div class="row inline">
+      <label>语速</label><input id="ttsRate" value="+8%" class="num">
+      <label>音调</label><input id="ttsPitch" value="+0Hz" class="num">
+    </div>
+    <div class="row inline">
+      <label>最大压缩</label><input id="maxTempo" value="1.45" class="num" type="number" step="0.05">
+      <label>中文语速(字/秒)</label><input id="maxCps" value="7.5" class="num" type="number" step="0.5">
+    </div>
+    <button class="btn ghost" id="btnPreviewVoice">试听这个音色</button>
+    <audio id="previewAudio" controls class="hidden"></audio>
+
+    <details class="keys">
+      <summary>可选增强：本地识别模型 / 人声分离</summary>
+      <div id="depsPanel" class="deps"></div>
+      <p class="hint">核心链路不需要这些；装上后识别可离线、更准，分离能让左右耳分工更干净。
+        安装会自动走国内 PyPI 镜像，装在工程内 <code>vendor/</code>，不动系统环境。</p>
+    </details>
+
+    <details class="keys">
+      <summary>API 密钥（不填也能跑离线/免费方案）</summary>
+      <div class="keygrid" id="keyGrid"></div>
+      <button class="btn ghost small" id="btnSaveKeys">保存密钥</button>
+    </details>
+
+    <h2>4 · 开始</h2>
+    <button class="btn primary" id="btnRun" disabled>开始注入 · 翻译 · 配音 · 摆位</button>
+    <label class="check"><input type="checkbox" id="burnVideo"> 额外烧录字幕视频</label>
+  </aside>
+
+  <!-- ================= 中栏：进度 ================= -->
+  <section class="panel stage">
+    <h2>流水线</h2>
+    <ol class="steplist" id="stepList"></ol>
+    <div class="progwrap">
+      <div class="progbar"><i id="progBar"></i></div>
+      <span id="progText">等待开始</span>
+    </div>
+    <div class="logbox" id="logBox"></div>
+  </section>
+
+  <!-- ================= 右栏：结果 ================= -->
+  <section class="panel result">
+    <h2>产出</h2>
+    <div id="resultEmpty" class="empty">还没有产出。<br>左侧注入一个 MP3 后点「开始」。</div>
+    <div id="resultBody" class="hidden">
+      <div class="abtest">
+        <h3>对耳试听</h3>
+        <p class="hint">戴耳机点播放：两个文件分别只有一只耳朵的声道，可确认「原声一只耳 / 中文另一只耳」。</p>
+        <div class="abitem"><span id="abOrigLabel">原声耳</span>
+          <audio id="abOrig" controls preload="none"></audio></div>
+        <div class="abitem"><span id="abDubLabel">中文耳</span>
+          <audio id="abDub" controls preload="none"></audio></div>
+        <div class="abitem"><span>成品（双声道）</span>
+          <audio id="abMix" controls preload="none"></audio></div>
+      </div>
+      <h3>下载</h3>
+      <div class="files" id="fileList"></div>
+      <h3>台词表</h3>
+      <div class="tablewrap">
+        <table id="segTable">
+          <thead><tr><th>#</th><th>时间</th><th>原声</th><th>中文</th><th>耳位</th><th>压缩</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="modal hidden" id="apiModal">
+  <div class="modalbox">
+    <header><h2>本软件需要调用的 API 种类清单</h2><button id="modalClose">✕</button></header>
+    <div id="apiModalBody" class="modalbodyscroll"></div>
+  </div>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

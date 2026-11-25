@@ -1,0 +1,41 @@
+# ===== 用户自己的素材（永远不进仓库）=====
+# 音声、切片、成品、试听片段
+*.mp3
+*.wav
+*.m4a
+*.mp4
+*.flac
+*.ogg
+*.srt
+*.ass
+
+# 运行时产物
+work/
+output/
+.tmp/
+_refcache/
+# 一键下载的整合包与解压结果（8GB+，绝不可入库）
+runtime/
+*.7z
+*.7z.part
+*.zip.part
+
+# ===== 模型权重（体积远超托管平台上限）=====
+*.ckpt
+*.pth
+*.onnx
+*.safetensors
+GPT_weights*/
+SoVITS_weights*/
+
+# ===== 本地配置（含 API 密钥，首次运行自动生成）=====
+config.json
+config.local.json
+
+# ===== 依赖与缓存 =====
+vendor/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
